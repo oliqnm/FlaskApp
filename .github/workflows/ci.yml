@@ -39,3 +39,36 @@ jobs:
 
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/flaskapp:latest
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+      - run: pip install -r requirements.txt
+      - run: pytest
+
+  build:
+    runs-on: ubuntu-latest
+    needs: tests   # Le build ne démarre que si les tests réussissent
+    steps:
+      ...
+      - name: Push Docker image
+        if: success()
+        run: docker push ...
+
+      - name: Send email if tests fail
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "Tests Failed"
+          to: "oliviaquenum490@gmail.com"
+          from: "CI Pipeline"
+          body: "Les tests unitaires ont échoué."
